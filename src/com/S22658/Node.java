@@ -17,10 +17,10 @@ public class Node implements Runnable {
     private HashMap<String, Integer> resources = new HashMap<>();
     private Socket nodeNetworkSocket;
     private ServerSocket communicationSocket;
-    private ArrayList<Socket> connectedNodes = new ArrayList<>();
+    private HashMap<String, Socket> connectedNodes = new HashMap<>();
     private HashMap<String, HashMap<String, Integer>> pendingChanges = new HashMap<>();
-    private boolean communicationNode = false;
-
+    private ArrayList<String> failedNodes = new ArrayList<>();
+    public boolean isCommunicationNode = false;
     //podlaczanie do istniejacej sieci
     public Node(String id, int port, String nodeNetworkIP, int nodeNetworkPort, HashMap<String, Integer> resources) {
         this.ID = id;
@@ -28,6 +28,9 @@ public class Node implements Runnable {
         try {
             nodeNetworkSocket = new Socket(InetAddress.getByName(nodeNetworkIP), nodeNetworkPort);
             communicationSocket = new ServerSocket(port);
+            PrintWriter writer = new PrintWriter(nodeNetworkSocket.getOutputStream(), true);
+            writer.println("-4 " + id);
+            System.out.println("Wezel " + id + " podlaczyl sie do wezla o ip: " + nodeNetworkIP + " i porcie: " + port);
         } catch (IOException e) {
             System.out.println("Nie udalo sie podlaczyc do sieci.");
         }
@@ -43,15 +46,34 @@ public class Node implements Runnable {
             System.out.println("Nie udalo sie podlaczyc do sieci.");
         }
     }
-
-    public void addConnectedNode(Socket s) {
-        connectedNodes.add(s);
+    public String getID(){
+        return ID;
+    }
+    public void addFailedNode(String id){
+        failedNodes.add(id);
+        HashMap<String, Socket> copyOfConnectedNodes = new HashMap<>(connectedNodes);
+        if(failedNodes.size() == connectedNodes.size()){
+            failedNodes.forEach(o -> copyOfConnectedNodes.remove(o));
+            copyOfConnectedNodes.values().forEach(o -> {
+                try {
+                    PrintWriter writer = new PrintWriter(o.getOutputStream());
+                    writer.println("-2 " + this.ID);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+        }
+    }
+    public void clearFailedNodes(){
+        failedNodes.clear();
+    }
+    public void addConnectedNode(String id, Socket s) {
+        connectedNodes.put(id, s);
     }
 
-    public ArrayList<Socket> getConnectedNodes() {
+    public HashMap<String, Socket> getConnectedNodes() {
         return connectedNodes;
     }
-
     public void allocateResources(HashMap<String, Integer> resourcesToAllocate, Socket notifierSocket, String ID, Socket source) {
         HashMap<String, Integer> resourceCopy = new HashMap<>(resources);
         for (String resource : resourcesToAllocate.keySet()) {
@@ -81,13 +103,13 @@ public class Node implements Runnable {
                         } catch (IOException e) {
                             System.out.println("Blad przy powiadamianiu wezla kontaktowego.");
                         }
-                        output.println("-2");
+                        output.println("-2 " + ID);
                     }
                 }
             }
         }
         pendingChanges.put(ID, resourceCopy);
-        for (Socket s : connectedNodes) {
+        for (Socket s : connectedNodes.values()) {
             String msg = "-1 ";
             for (String resource : resourcesToAllocate.keySet()) {
                 msg += resource + ":" + resourcesToAllocate.get(resource) + " ";
@@ -103,7 +125,7 @@ public class Node implements Runnable {
 
     //jezeli cos edytuje zasoby pomiedzy proba, a potwierdzeniem to sie wysypie
     public void confirmResourceAllocation(String id, Socket source) {
-        for(Socket s: connectedNodes){
+        for(Socket s: connectedNodes.values()){
             if(s.getPort()!=source.getPort() && s.getLocalAddress() != s.getLocalAddress()) {
                 PrintWriter output = null;
                 try {

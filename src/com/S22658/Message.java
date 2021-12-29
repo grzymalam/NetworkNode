@@ -11,12 +11,14 @@ public class Message {
     private String ip;
     private int port;
     private Socket source;
+    private String senderNodeID;
     /*
     * >=0 client
     * -1 nodeAllocationRequest
     * -2 nodeFail
     * -3 nodeSuccess
-    * -4 confirmChanges
+    * -4 nodeConnectionRequest
+    * -5 confirmChanges
     * */
     public Message(String msg, Socket source){
         String[] messageSplit = msg.split(" ");
@@ -31,9 +33,13 @@ public class Message {
             type = messageType.NODEALLOCATIONREQUEST;
         }else if (Integer.valueOf(ID) == -2){
             type = messageType.NODEFAILNOTIFICATION;
+            senderNodeID = messageSplit[1];
         }else if (Integer.valueOf(ID) == -3) {
             type = messageType.NODESUCCESSNOTIFICATION;
-        }else
+        }else if(Integer.valueOf(ID) == -4){
+            type = messageType.NODECONNECTIONREQUEST;
+            senderNodeID = messageSplit[1];
+        } else
             type = messageType.NETWORKCONFIRMATION;
     }
     public String getID(){
@@ -42,10 +48,13 @@ public class Message {
     public Socket getSource() {
         return source;
     }
+    public String getSenderNodeID() {
+        return senderNodeID;
+    }
     public HashMap<String, Integer> getResources() {
         return resources;
     }
 }
 enum messageType{
-    CLIENTRESOURCEREQUEST, NODESUCCESSNOTIFICATION, NODEFAILNOTIFICATION, NODEALLOCATIONREQUEST, NETWORKCONFIRMATION
+    CLIENTRESOURCEREQUEST, NODESUCCESSNOTIFICATION, NODEFAILNOTIFICATION, NODEALLOCATIONREQUEST, NETWORKCONFIRMATION, NODECONNECTIONREQUEST
 }

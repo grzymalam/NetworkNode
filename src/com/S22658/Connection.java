@@ -28,13 +28,15 @@ public class Connection implements Runnable{
 
             String line;
             while ((line = input.readLine()) != null) {
+                System.out.println(line);
                 msg = new Message(line, connectionSocket);
                 switch (msg.type){
-                    case CLIENTRESOURCEREQUEST: node.allocateResources(msg.getResources(), connectionSocket, msg.getID(), msg.getSource()); isClientConnection = true; break;
-                    case NODESUCCESSNOTIFICATION: break;
-                    case NODEFAILNOTIFICATION: break;
+                    case CLIENTRESOURCEREQUEST: node.allocateResources(msg.getResources(), connectionSocket, msg.getID(), msg.getSource()); node.isCommunicationNode = true; break;
+                    case NODESUCCESSNOTIFICATION: node.clearFailedNodes(); output.println("ALLOCATED"); node.confirmResourceAllocation(node.getID(), connectionSocket); break;
+                    case NODEFAILNOTIFICATION: node.addFailedNode(msg.getSenderNodeID()); break;
                     case NODEALLOCATIONREQUEST: node.allocateResources(msg.getResources(), connectionSocket, msg.getID(), msg.getSource()); break;
-                    case NETWORKCONFIRMATION: node.confirmResourceAllocation(msg.getID(), msg.getSource());
+                    case NETWORKCONFIRMATION: node.confirmResourceAllocation(msg.getID(), msg.getSource()); break;
+                    case NODECONNECTIONREQUEST: node.addConnectedNode(msg.getSenderNodeID(), msg.getSource());
                 }
             }
         } catch (IOException e) {
