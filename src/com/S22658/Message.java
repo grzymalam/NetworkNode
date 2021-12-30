@@ -20,29 +20,38 @@ public class Message {
     * -4 nodeConnectionRequest
     * -5 confirmChanges
     * */
-    public Message(String msg, Socket source){
+    public Message(String msg, Socket source) {
+        System.out.println("NEW MESSAGE: " + msg);
         String[] messageSplit = msg.split(" ");
-        if(Integer.valueOf(ID = messageSplit[0]) >= 0) {
+        ID = messageSplit[0];
+        System.out.println("int val= " + Integer.valueOf(ID));
+        if (Integer.valueOf(ID) >= 0) {
             type = messageType.CLIENTRESOURCEREQUEST;
             ip = source.getInetAddress().getHostAddress();
             port = source.getPort();
-            for(int i = 1; i < messageSplit.length; i++){
+            for (int i = 1; i < messageSplit.length; i++) {
                 resources.put(messageSplit[i].split(":")[0], Integer.valueOf(messageSplit[i].split(":")[1]));
             }
-        }else if(Integer.valueOf(ID) == -1){
+        } else if (Integer.valueOf(ID) == -1) {
             type = messageType.NODEALLOCATIONREQUEST;
-        }else if (Integer.valueOf(ID) == -2){
+            System.out.println("Alloc");
+            System.out.println(ID);
+            System.out.println(messageSplit[1]);
+        } else if (Integer.valueOf(ID) == -2) {
             type = messageType.NODEFAILNOTIFICATION;
             senderNodeID = messageSplit[1];
-            for(int i = 2; i < messageSplit.length; i++){
+            for (int i = 2; i < messageSplit.length; i++) {
                 resources.put(messageSplit[i].split(":")[0], Integer.valueOf(messageSplit[i].split(":")[1]));
             }
-        }else if (Integer.valueOf(ID) == -3) {
+        } else if (Integer.valueOf(ID) == -3) {
             type = messageType.NODESUCCESSNOTIFICATION;
-        }else if(Integer.valueOf(ID) == -4){
+        } else if (Integer.valueOf(ID) == -4) {
             type = messageType.NODECONNECTIONREQUEST;
             senderNodeID = messageSplit[1];
-        } else
+        }else if(Integer.valueOf(ID) == -5){
+            type = messageType.SENDSELFID;
+            senderNodeID = messageSplit[1];
+        }else
             type = messageType.NETWORKCONFIRMATION;
     }
     public String getID(){
@@ -56,5 +65,5 @@ public class Message {
     }
 }
 enum messageType{
-    CLIENTRESOURCEREQUEST, NODESUCCESSNOTIFICATION, NODEFAILNOTIFICATION, NODEALLOCATIONREQUEST, NETWORKCONFIRMATION, NODECONNECTIONREQUEST
+    CLIENTRESOURCEREQUEST, NODESUCCESSNOTIFICATION, NODEFAILNOTIFICATION, NODEALLOCATIONREQUEST, NETWORKCONFIRMATION, NODECONNECTIONREQUEST, SENDSELFID
 }
