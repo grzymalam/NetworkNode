@@ -31,12 +31,14 @@ public class Connection implements Runnable{
                 System.out.println(line);
                 msg = new Message(line, connectionSocket);
                 switch (msg.type){
-                    case CLIENTRESOURCEREQUEST: node.allocateResources(msg.getResources(), connectionSocket, msg.getID(), msg.getSource()); node.isCommunicationNode = true; break;
-                    case NODESUCCESSNOTIFICATION: node.clearFailedNodes(); output.println("ALLOCATED"); node.confirmResourceAllocation(node.getID(), connectionSocket); break;
-                    case NODEFAILNOTIFICATION: node.addFailedNode(msg.getSenderNodeID()); break;
-                    case NODEALLOCATIONREQUEST: node.allocateResources(msg.getResources(), connectionSocket, msg.getID(), msg.getSource()); break;
-                    case NETWORKCONFIRMATION: node.confirmResourceAllocation(msg.getID(), msg.getSource()); break;
-                    case NODECONNECTIONREQUEST: node.addConnectedNode(msg.getSenderNodeID(), msg.getSource());
+                    case CLIENTRESOURCEREQUEST:
+                        System.out.println("CLIENT ALLOC REQUEST"); node.allocateResources(msg.getResources(), msg.getID(), connectionSocket); node.isCommunicationNode = true; break;
+                    case NODESUCCESSNOTIFICATION: node.fillNodesToCheck(); output.println("ALLOCATED"); node.confirmResourceAllocation(node.getID(), connectionSocket); break;
+                    case NODEFAILNOTIFICATION: node.removeFailedNode(msg.getSenderNodeID(), msg.getResources()); break;
+                    case NODEALLOCATIONREQUEST: node.allocateResources(msg.getResources(), msg.getID(), connectionSocket); break;
+                    case NETWORKCONFIRMATION: node.confirmResourceAllocation(msg.getID(), connectionSocket); break;
+                    case NODECONNECTIONREQUEST:
+                        System.out.println("NODE CNCT RQST"); node.addConnectedNode(msg.getSenderNodeID(), connectionSocket);
                 }
             }
         } catch (IOException e) {

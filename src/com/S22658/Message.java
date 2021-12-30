@@ -5,7 +5,7 @@ import java.util.HashMap;
 
 public class Message {
     private String ID;
-    private HashMap<String, Integer> resources = new HashMap<String, Integer>();
+    private HashMap<String, Integer> resources = new HashMap<>();
     public messageType type;
     //node z ktorym klient sie polaczyl
     private String ip;
@@ -34,6 +34,9 @@ public class Message {
         }else if (Integer.valueOf(ID) == -2){
             type = messageType.NODEFAILNOTIFICATION;
             senderNodeID = messageSplit[1];
+            for(int i = 2; i < messageSplit.length; i++){
+                resources.put(messageSplit[i].split(":")[0], Integer.valueOf(messageSplit[i].split(":")[1]));
+            }
         }else if (Integer.valueOf(ID) == -3) {
             type = messageType.NODESUCCESSNOTIFICATION;
         }else if(Integer.valueOf(ID) == -4){
@@ -44,9 +47,6 @@ public class Message {
     }
     public String getID(){
         return ID;
-    }
-    public Socket getSource() {
-        return source;
     }
     public String getSenderNodeID() {
         return senderNodeID;
