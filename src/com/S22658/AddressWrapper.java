@@ -24,4 +24,8 @@ public class AddressWrapper {
     public void setPort(int port) {
         this.port = port;
     }
+    @Override
+    public String toString(){
+        return "IP: " + address + " PORT: " + port;
+    }
 }
