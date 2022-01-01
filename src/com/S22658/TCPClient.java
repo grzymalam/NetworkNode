@@ -12,7 +12,7 @@ public class TCPClient extends Thread {
     private Socket socket = null;
     private BufferedReader input = null;
     private PrintWriter output = null;
-    private boolean silentMode = false;
+    private boolean run = true;
     /**
      * The data in TCP messages has no line terminators.
      */
@@ -23,9 +23,6 @@ public class TCPClient extends Thread {
         while(true){
             try {
                 socket = new Socket(address, port);
-
-                if(!silentMode)
-                    System.out.println("CLIENT START");
 
                 output = new PrintWriter(socket.getOutputStream(), true);
                 input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -56,38 +53,6 @@ public class TCPClient extends Thread {
     }
 
     /**
-     * Unconnected constructor
-     */
-    public TCPClient(){};
-
-    /**
-     * Gives you the local port automatically assigned to create the connection.
-     * @return the local port you used to make the connection.
-     * @since 1.0.3
-     */
-    public int getOwnPort(){
-        return socket.getLocalPort();
-    }
-
-    /**
-     * Gives you the current socket for direct interaction.
-     * @return the socket
-     * @since 1.0.3
-     */
-    public Socket getSocket(){
-        return socket;
-    }
-
-    /**
-     * In silent mode, only errors are printed.
-     * @param shouldBeSilent true to enable, false to disable.
-     * @since 1.0.3
-     */
-    public void setSilentMode(boolean shouldBeSilent){
-        this.silentMode = shouldBeSilent;
-    }
-
-    /**
      * You can use this method to send a message to the server you have connected to.
      * @param message the message to be sent
      */
@@ -107,19 +72,22 @@ public class TCPClient extends Thread {
      */
     public String get(){
         if(received.size() > 0){
+            run = false;
             return received.removeFirst();
         } else {
             System.out.println("Tried to read empty received buffer, returning ''");
             return null;
         }
+
     }
 
     public void run() {
         while(true){
-            if(input != null){
+            if(input != null && run){
                 try {
                     String receivedStr = input.readLine();
-                    received.add(receivedStr);
+                    if(receivedStr!=null)
+                        received.add(receivedStr);
                 } catch (IOException e) {
                     System.out.println(e);
                 }

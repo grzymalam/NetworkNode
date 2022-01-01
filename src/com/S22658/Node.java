@@ -15,7 +15,6 @@ public class Node implements Runnable {
     private final int port;
     private HashMap<String, Integer> resources;
     private HashMap<String, Integer> pendingResources = new HashMap<>();
-    private Socket nodeNetworkSocket;
     private Socket clientSocket;
     private ServerSocket communicationSocket;
     private HashMap<String, AddressWrapper> connectedNodes = new HashMap<>();
@@ -29,7 +28,7 @@ public class Node implements Runnable {
         this.port = port;
         this.resources = resources;
         try {
-            nodeNetworkSocket = new Socket(InetAddress.getByName(nodeNetworkIP), nodeNetworkPort);
+            Socket nodeNetworkSocket = new Socket(InetAddress.getByName(nodeNetworkIP), nodeNetworkPort);
             communicationSocket = new ServerSocket(port);
             communicationSocket.setReuseAddress(true);
             address = communicationSocket.getInetAddress().getHostAddress();
@@ -54,25 +53,36 @@ public class Node implements Runnable {
             System.out.println("Nie udalo sie podlaczyc do sieci.");
         }
     }
-    public void reset(){
-        isCommunicationNode = false;
+
+    public void reset() {
+        log("Resetting");
+        log("IS COMMUNICATION NODE?: " + isCommunicationNode);
+        if (isCommunicationNode) {
+            isCommunicationNode = false;
+            try {
+                clientSocket.close();
+                clientSocket = null;
+            } catch (IOException e) {
+                log("Blad zamykania polaczenia z klientem.");
+            }
+        }
         fillNodesToCheck();
-        clientSocket = null;
         pendingResources.clear();
     }
+
     public String getID() {
         return ID;
     }
-    public HashMap<String, AddressWrapper> getConnectedNodes(){
-        return connectedNodes;
-    }
-    public HashMap<String, Integer> getResources(){
+
+    public HashMap<String, Integer> getResources() {
         return resources;
     }
-    public void setClientSocket(Socket socket){
+
+    public void setClientSocket(Socket socket) {
         isCommunicationNode = true;
         clientSocket = socket;
     }
+
     //nody dostepne do sprawdzenia sa resetowane po sukcesie
     public void addConnectedNode(String id, AddressWrapper wrapper) {
         log("Adding new node and sending own id to it");
@@ -80,50 +90,56 @@ public class Node implements Runnable {
         nodesLeftToCheck.add(id);
         sendSelfId(wrapper);
     }
-    public void addConnectingNodeToConnectedNodes(String id, AddressWrapper wrapper){
+
+    public void addConnectingNodeToConnectedNodes(String id, AddressWrapper wrapper) {
         log("Adding new node that we asked to be connected to.");
         connectedNodes.put(id, wrapper);
         nodesLeftToCheck.add(id);
     }
 
-    public void fillNodesToCheck(){
+    public void fillNodesToCheck() {
         nodesLeftToCheck = new ArrayList<>(connectedNodes.keySet());
     }
+
     public void removeFailedNode(String id, HashMap<String, Integer> resourcesToAllocate) {
         nodesLeftToCheck.remove(id);
         checkNextChildNode(resourcesToAllocate);
     }
-    public void send(String id, String message){
+
+    public void send(String id, String message) {
         PrintWriter writer;
         Socket socket;
-        try{
+        try {
             socket = new Socket(connectedNodes.get(id).getAddress(), connectedNodes.get(id).getPort());
             writer = new PrintWriter(socket.getOutputStream(), true);
             writer.println(message);
-        }catch (Exception e){
+        } catch (Exception e) {
             log("Error sending message. STRING/STRING");
         }
     }
-    public void send(AddressWrapper wrapper, String message){
+
+    public void send(AddressWrapper wrapper, String message) {
         PrintWriter writer;
         Socket socket;
-        try{
+        try {
             socket = new Socket(wrapper.getAddress(), wrapper.getPort());
             writer = new PrintWriter(socket.getOutputStream(), true);
             writer.println(message);
-        }catch (Exception e){
+        } catch (Exception e) {
             log("Error sending message. ADDRESSWRAPPER/STRING");
         }
     }
-    public void send(Socket socket, String message){
+
+    public void send(Socket socket, String message) {
         PrintWriter writer;
-        try{
+        try {
             writer = new PrintWriter(socket.getOutputStream(), true);
             writer.println(message);
-        }catch (Exception e){
+        } catch (Exception e) {
             log("Error sending message. SOCKET/STRING");
         }
     }
+
     public void allocateResources(HashMap<String, Integer> resourcesToAllocate, String ID) {
         allocationInvokerID = ID;
         nodesLeftToCheck.remove(ID);
@@ -151,16 +167,16 @@ public class Node implements Runnable {
                     //jezeli node nie mial wystarczajacej ilosci zasobu
                     System.out.println("NODE [" + this.ID + "]: node doesnt have enough resources to allocate.");
                     resourceCopy.replace(resource, 0);
-                    resourcesToAllocateAfterAllocation.put(resource, diff*-1);
+                    resourcesToAllocateAfterAllocation.put(resource, diff * -1);
                     System.out.println("NODE [" + this.ID + "]: resource left to alloc: " + resourcesToAllocateAfterAllocation.get(resource));
                 }
-            }else
+            } else
                 resourcesToAllocateAfterAllocation.put(resource, resourcesToAllocate.get(resource));
         }
-        if(resourcesToAllocateAfterAllocation.size() == 0)
+        if (resourcesToAllocateAfterAllocation.size() == 0)
             bouncebackSuccess();
-        else{
-            if(nodesLeftToCheck.size() == 0)
+        else {
+            if (nodesLeftToCheck.size() == 0)
                 bouncebackFailed(resourcesToAllocateAfterAllocation);
             else
                 checkNextChildNode(resourcesToAllocateAfterAllocation);
@@ -168,18 +184,20 @@ public class Node implements Runnable {
         log("Putting pending changes: " + resourceCopy.keySet() + " " + resourceCopy.values());
         pendingResources = resourceCopy;
     }
-    public void sendSelfId(AddressWrapper wrapper){
+
+    public void sendSelfId(AddressWrapper wrapper) {
         String msg = "-5 " + ID + " " + address + " " + port;
         System.out.println("WRAPPER: " + wrapper);
         System.out.println("MESSAGE: " + msg);
         send(wrapper, msg);
         log("Sent own id.");
     }
-    public void checkNextChildNode(HashMap<String, Integer> resourcesToAllocate){
+
+    public void checkNextChildNode(HashMap<String, Integer> resourcesToAllocate) {
         log("NODES LEFT TO CHECK: " + nodesLeftToCheck);
         log("resources to be allocated: " + resourcesToAllocate.keySet().toString());
         log("resources to be allocated: " + resourcesToAllocate.values().toString());
-        if(nodesLeftToCheck.size()>0) {
+        if (nodesLeftToCheck.size() > 0) {
             String nodeToCheckID = nodesLeftToCheck.get(0);
             log("CHECKING NODE " + nodeToCheckID);
             String msg = "-1 " + this.ID + " ";
@@ -190,51 +208,49 @@ public class Node implements Runnable {
             send(nodeToCheckID, msg);
             System.out.println("Message sent");
             nodesLeftToCheck.remove(nodeToCheckID);
-        }else{
+        } else {
             bouncebackFailed(resourcesToAllocate);
             log("Allocation failed. Not enough resources. Changes have not been saved");
         }
     }
-    public void bouncebackFailed(HashMap<String,Integer> resourcesToAllocate){
+
+    public void bouncebackFailed(HashMap<String, Integer> resourcesToAllocate) {
         String msg = "-2 " + ID + " ";
-        if(!isCommunicationNode) {
+        if (!isCommunicationNode) {
             for (String resource : resourcesToAllocate.keySet()) {
                 msg += resource + ":" + resourcesToAllocate.get(resource) + " ";
             }
             send(allocationInvokerID, msg);
-        }else {
+        } else {
             msg = "FAILED";
             send(clientSocket, msg);
         }
     }
-    public void bouncebackSuccess(){
+
+    public void bouncebackSuccess() {
         String msg;
-        Socket source;
-        if(!isCommunicationNode) {
-            msg = "-3";
-        }else
+        if (isCommunicationNode) {
             msg = "ALLOCATED";
+        } else
+            msg = "-3";
         try {
-            if(!isCommunicationNode) {
-                log("INVOKER DATA: " + connectedNodes.get(allocationInvokerID));
-                log("INVOKER ID: " + allocationInvokerID);
-                send(allocationInvokerID, msg);
-            }
-            else {
+            if (isCommunicationNode) {
                 send(clientSocket, msg);
                 log("Alloc succefull, client has been notified.");
+            } else {
+                send(allocationInvokerID, msg);
             }
         } catch (NullPointerException e) {
             e.printStackTrace();
         }
     }
+
     public void confirmResourceAllocation(String id) {
         log(id);
         log("IDs");
         log(connectedNodes.keySet().toString());
         ArrayList<String> nodesToBeNotified = new ArrayList<>(connectedNodes.keySet());
-        Socket socket;
-        for (String checkedID: nodesToBeNotified) {
+        for (String checkedID : nodesToBeNotified) {
             if (!id.equals(checkedID)) {
                 log("NOTIFYING NODE: " + checkedID);
                 send(checkedID, "-6 " + this.ID);
@@ -243,25 +259,25 @@ public class Node implements Runnable {
         //todo pending resources
         log("PENDING RESOURCES:" + pendingResources.toString());
         log("RESOURCES:" + resources.toString());
-        if(!pendingResources.isEmpty())
+        if (!pendingResources.isEmpty())
             resources = new HashMap<>(pendingResources);
         log("RESOURCES AFTER ALLOC:" + resources.toString());
         reset();
     }
 
-    public void log(String msg){
+    public void log(String msg) {
         System.out.println("[NODE " + ID + "]: " + msg);
     }
+
     @Override
     public void run() {
-        Socket newConnection = null;
         while (true) {
             try {
-                newConnection = communicationSocket.accept();
+                Socket newConnection = communicationSocket.accept();
+                new Thread(new Connection(newConnection, this)).start();
             } catch (IOException e) {
                 System.out.println("Blad odbioru danych.");
             }
-            new Thread(new Connection(newConnection, this)).start();
         }
     }
 }

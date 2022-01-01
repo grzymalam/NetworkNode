@@ -1,6 +1,5 @@
 package com.S22658;
 
-import java.net.Socket;
 import java.util.HashMap;
 
 public class Message {
@@ -21,10 +20,9 @@ public class Message {
     * -6 confirmChanges
     * */
     public Message(String msg) {
-        System.out.println("NEW MESSAGE: " + msg);
         String[] messageSplit = msg.split(" ");
         ID = messageSplit[0];
-        int integerID = Integer.valueOf(ID);
+        int integerID = Integer.parseInt(ID);
         if (integerID >= 0) {
             type = messageType.CLIENTRESOURCEREQUEST;
             for (int i = 1; i < messageSplit.length; i++) {
@@ -36,9 +34,6 @@ public class Message {
             for (int i = 2; i < messageSplit.length; i++) {
                 resources.put(messageSplit[i].split(":")[0], Integer.valueOf(messageSplit[i].split(":")[1]));
             }
-            System.out.println("Alloc");
-            System.out.println(ID);
-            System.out.println(messageSplit[2]);
         } else if (integerID == -2) {
             type = messageType.NODEFAILNOTIFICATION;
             senderNodeID = messageSplit[1];
@@ -51,13 +46,12 @@ public class Message {
             type = messageType.NODECONNECTIONREQUEST;
             senderNodeID = messageSplit[1];
             ip = messageSplit[2];
-            port = Integer.valueOf(messageSplit[3]);
+            port = Integer.parseInt(messageSplit[3]);
         }else if(integerID == -5){
             type = messageType.SENDSELFID;
             senderNodeID = messageSplit[1];
             ip = messageSplit[2];
-            port = Integer.valueOf(messageSplit[3]);
-            System.out.println("RECEIVED: " + senderNodeID + " " + ip + " " + port);
+            port = Integer.parseInt(messageSplit[3]);
         }else if(integerID == -6){
             type = messageType.NETWORKCONFIRMATION;
             ID = messageSplit[1];

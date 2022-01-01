@@ -1,8 +1,8 @@
 package com.S22658;
 
 public class AddressWrapper {
-    private String address;
-    private int port;
+    private final String address;
+    private final int port;
 
     public AddressWrapper(String address, int port) {
         this.address = address;
@@ -13,17 +13,10 @@ public class AddressWrapper {
         return address;
     }
 
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
     public int getPort() {
         return port;
     }
 
-    public void setPort(int port) {
-        this.port = port;
-    }
     @Override
     public String toString(){
         return "IP: " + address + " PORT: " + port;
