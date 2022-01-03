@@ -29,8 +29,6 @@ public class Connection implements Runnable {
                 case NODESUCCESSNOTIFICATION:
                     node.fillNodesToCheck();
                     node.bouncebackSuccess();
-                    if (node.isCommunicationNode)
-                        node.confirmResourceAllocation(node.getID());
                     break;
                 case NODEFAILNOTIFICATION:
                     node.removeFailedNode(msg.getSenderNodeID(), msg.getResources());

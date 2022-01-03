@@ -7,8 +7,8 @@ import java.util.HashMap;
 public class Main {
 
     public static void main(String[] args) {
-        HashMap<String, Integer> resources = new HashMap<>();
         ArrayList<Thread> watki = new ArrayList<>();
+        HashMap<String, Integer> resources = new HashMap<>();
         resources.put("A", 3);
         resources.put("B", 2);
         Node pierwszy = new Node("2137", 4656, resources);
@@ -49,10 +49,10 @@ public class Main {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
+        noudy.forEach(node -> System.out.println(node.getID() + ": " + node.getResources().keySet() + node.getResources().values()));
         //1szy klient
         TCPClient client = new TCPClient("localhost", 4656);
-        client.send("2000 A:10 B:1 C:3 D:1 F:10");
+        client.send("1354 A:10 B:1 C:30 D:1 F:10");
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
@@ -61,9 +61,9 @@ public class Main {
 
         //2gi klient
         TCPClient client2 = new TCPClient("localhost", 4878);
-        client2.send("2137 A:2 B:9");
+        client2.send("5454 A:2 B:9");
         try {
-            Thread.sleep(2000);
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

@@ -67,7 +67,7 @@ public class Node implements Runnable {
             }
         }
         fillNodesToCheck();
-        pendingResources.clear();
+        pendingResources = new HashMap<>(resources);
     }
 
     public String getID() {
@@ -141,8 +141,10 @@ public class Node implements Runnable {
     }
 
     public void allocateResources(HashMap<String, Integer> resourcesToAllocate, String ID) {
-        allocationInvokerID = ID;
+        fillNodesToCheck();
+        pendingResources = new HashMap<>(resources);
         nodesLeftToCheck.remove(ID);
+        allocationInvokerID = ID;
         System.out.println("NODE [" + this.ID + "] allocating resources for: " + ID);
         HashMap<String, Integer> resourceCopy = new HashMap<>(resources);
         HashMap<String, Integer> resourcesToAllocateAfterAllocation = new HashMap<>();
@@ -170,12 +172,17 @@ public class Node implements Runnable {
                     resourcesToAllocateAfterAllocation.put(resource, diff * -1);
                     System.out.println("NODE [" + this.ID + "]: resource left to alloc: " + resourcesToAllocateAfterAllocation.get(resource));
                 }
-            } else
+            } else {
+                log("NODE DOESNT CONTAIN THE RESOURCE: " + resource);
                 resourcesToAllocateAfterAllocation.put(resource, resourcesToAllocate.get(resource));
+            }
         }
-        if (resourcesToAllocateAfterAllocation.size() == 0)
+        if (resourcesToAllocateAfterAllocation.size() == 0) {
+            log("success");
             bouncebackSuccess();
+        }
         else {
+            log("Nodes left to check : " + nodesLeftToCheck);
             if (nodesLeftToCheck.size() == 0)
                 bouncebackFailed(resourcesToAllocateAfterAllocation);
             else
@@ -222,6 +229,7 @@ public class Node implements Runnable {
             }
             send(allocationInvokerID, msg);
         } else {
+            log("SENDING FAILED");
             msg = "FAILED";
             send(clientSocket, msg);
         }
@@ -230,6 +238,7 @@ public class Node implements Runnable {
     public void bouncebackSuccess() {
         String msg;
         if (isCommunicationNode) {
+            confirmResourceAllocation(ID);
             msg = "ALLOCATED";
         } else
             msg = "-3";
@@ -256,13 +265,11 @@ public class Node implements Runnable {
                 send(checkedID, "-6 " + this.ID);
             }
         }
-        //todo pending resources
         log("PENDING RESOURCES:" + pendingResources.toString());
         log("RESOURCES:" + resources.toString());
         if (!pendingResources.isEmpty())
             resources = new HashMap<>(pendingResources);
         log("RESOURCES AFTER ALLOC:" + resources.toString());
-        reset();
     }
 
     public void log(String msg) {
