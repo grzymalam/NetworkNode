@@ -75,7 +75,6 @@ public class TCPClient extends Thread {
             run = false;
             return received.removeFirst();
         } else {
-            System.out.println("Tried to read empty received buffer, returning ''");
             return null;
         }
 
