@@ -58,6 +58,7 @@ public class Main {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        System.out.println("CLIENT1 RECEIVED: " + client.get());
 
         //2gi klient
         TCPClient client2 = new TCPClient("localhost", 4878);
@@ -67,7 +68,8 @@ public class Main {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        System.out.println("CLIENT1 RECEIVED: " + client.get());
+        System.out.println("CLIENT2 RECEIVED: " + client2.get());
+        System.out.println("CLIENT2 RECEIVED: " + client2.get());
         System.out.println("CLIENT2 RECEIVED: " + client2.get());
         try {
             Thread.sleep(1000);
